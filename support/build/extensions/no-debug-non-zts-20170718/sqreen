@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# Build Path: /app/.heroku/php
+
+# fail hard
+set -o pipefail
+# fail harder
+set -eu
+
+source $(dirname $BASH_SOURCE)/../../_util/include/manifest.sh
+
+ZEND_MODULE_API_VERSION=$(basename $(dirname $0))
+
+case ${ZEND_MODULE_API_VERSION#no-debug-non-zts-} in
+	20121212)
+		series=5.5
+		;;
+	20131226)
+		series=5.6
+		;;
+	20151012)
+		series=7.0
+		;;
+	20160303)
+		series=7.1
+		;;
+	20170718)
+		series=7.2
+		;;
+	*)
+		echo "Unsupported PHP/Zend Module API version: ${ZEND_MODULE_API_VERSION}"
+		exit 1
+		;;
+esac
+
+SQREEN_LIST=/etc/apt/sources.list.d/sqreen_sqreen.list
+if [[ ! -f $SQREEN_LIST ]]; then
+  apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 7B5248ECE3E59766
+  apt-get update && apt-get install -y apt-transport-https
+  source /etc/lsb-release
+  UNIQUE_ID=`hostname -f`
+  curl -f "https://8dc0b36f0ea6f2f21b721765e10a7e02768cd1825b4551f4:@packagecloud.io/install/repositories/sqreen/sqreen/config_file.list?os=ubuntu&dist=${DISTRIB_CODENAME}&name=${UNIQUE_ID}" > $SQREEN_LIST
+fi
+
+apt-get update
+
+OUT_PREFIX=$1
+export PATH=${OUT_PREFIX}/bin:${PATH}
+
+dep_name=sqreen
+dep_formula=${0#$WORKSPACE_DIR/}
+dep_version=$(apt-cache policy sqreen-php-extension | grep Candidate | awk '{ print $2; }')
+dep_package=ext-${dep_name}-${dep_version}
+dep_manifest=${dep_package}_php-$series.composer.json
+
+DAEMON_VERSION=$(apt-cache policy sqreen-agent | grep Candidate | awk '{ print $2; }')
+
+function cached_download {
+  local readonly package=$1 version=$2
+  local readonly cached_file=/tmp/cached_packages/${package}_${version}_amd64.deb
+  mkdir -p /tmp/cached_packages
+  if [[ -f $cached_file ]]; then
+    echo "(cached)"
+    cp $cached_file .
+  else
+    if grep '^_apt:' /etc/passwd; then chown _apt .; fi
+    apt-get download ${package}=${version}
+    cp ${package}_${version}_amd64.deb /tmp/cached_packages
+  fi
+}
+
+echo "-----> Fetching sqreen-php-extension $dep_version..."
+cached_download sqreen-php-extension $dep_version
+
+echo "-----> Copying relevant extension bits for PHP $series..."
+dpkg-deb -x sqreen-php-extension_${dep_version}_amd64.deb ext
+
+rm -rf ${OUT_PREFIX}/*
+install -D ext/usr/lib/sqreen/extensions/$series/sqreen.so \
+  "${OUT_PREFIX}/lib/php/extensions/${ZEND_MODULE_API_VERSION}/sqreen.so"
+INI="${OUT_PREFIX}/etc/php/conf.d/ext-sqreen.ini-dist"
+install -D ext/usr/lib/sqreen/extensions/conf/sqreen.ini "$INI"
+sed -i 's@sqreen.log_file=.*@sqreen.log_file=stderr@' "$INI"
+sed -i 's@sqreen.token=.*@sqreen.token=@' "$INI"
+
+echo "-----> Fetching sqreen-agent ${DAEMON_VERSION}..."
+cached_download sqreen-agent ${DAEMON_VERSION}
+
+echo "-----> Installing the daemon to the correct location..."
+dpkg-deb -x sqreen-agent_${DAEMON_VERSION}_amd64.deb agent
+cp -a agent/usr/lib "$OUT_PREFIX"
+echo sqreen.daemon_executable=/app/.heroku/php/lib/sqreen/sqreen-agent/sqreen-agent >> "$INI"
+echo "sqreen.daemon_params='--log_location=/app/.heroku/php/var/log/sqreen-daemon.log'" >> "$INI"
+
+mkdir -p "$OUT_PREFIX/bin"
+cat > "$OUT_PREFIX"/bin/profile.sqreen.sh <<EOF
+if [[ -n "\$SQREEN_TOKEN" ]]; then
+  echo "sqreen.token=\$SQREEN_TOKEN" > /app/.heroku/php/etc/php/conf.d/999-sqreen-token.ini
+  if [[ -f "/app/.heroku/php/lib/sqreen/sqreen-agent/sqreen-agent" ]]; then
+    /app/.heroku/php/lib/sqreen/sqreen-agent/sqreen-agent --log_location /dev/stderr &
+  else
+    echo >&2 "WARNING: Add-on 'sqreen' detected, but the agent is not yet installed. Push an update to the application to finish installation of the add-on; an empty change ('git commit --allow-empty') is sufficient."
+  fi
+fi
+EOF
+
+MANIFEST_REQUIRE="${MANIFEST_REQUIRE:-"{\"heroku-sys/php\":\"${series}.*\"}"}"
+MANIFEST_CONFLICT="${MANIFEST_CONFLICT:-"{\"heroku-sys/hhvm\":\"*\"}"}"
+MANIFEST_REPLACE="${MANIFEST_REPLACE:-"{}"}"
+MANIFEST_PROVIDE="${MANIFEST_PROVIDE:-"{}"}"
+MANIFEST_EXTRA="${MANIFEST_EXTRA:-"{\"config\":\"etc/php/conf.d/ext-sqreen.ini-dist\",\"profile\":\"bin/profile.sqreen.sh\"}"}"
+
+python $(dirname $BASH_SOURCE)/../../_util/include/manifest.py "heroku-sys-php-extension" "heroku-sys/ext-${dep_name}" "$dep_version" "${dep_formula}.tar.gz" "$MANIFEST_REQUIRE" "$MANIFEST_CONFLICT" "$MANIFEST_REPLACE" "$MANIFEST_PROVIDE" "$MANIFEST_EXTRA" > $dep_manifest
+
+print_or_export_manifest_cmd "$(generate_manifest_cmd "$dep_manifest")"
