@@ -84,6 +84,7 @@ INI="${OUT_PREFIX}/etc/php/conf.d/ext-sqreen.ini-dist"
 install -D ext/usr/lib/sqreen/extensions/conf/sqreen.ini "$INI"
 sed -i 's@sqreen.log_file=.*@sqreen.log_file=stderr@' "$INI"
 sed -i 's@sqreen.token=.*@sqreen.token=@' "$INI"
+sed -i 's@sqreen.app_name=.*@sqreen.app_name=@' "$INI"
 
 echo "-----> Fetching sqreen-agent ${DAEMON_VERSION}..."
 cached_download sqreen-agent ${DAEMON_VERSION}
@@ -96,8 +97,12 @@ echo "sqreen.daemon_params='--log_location=/app/.heroku/php/var/log/sqreen-daemo
 
 mkdir -p "$OUT_PREFIX/bin"
 cat > "$OUT_PREFIX"/bin/profile.sqreen.sh <<EOF
+
 if [[ -n "\$SQREEN_TOKEN" ]]; then
   echo "sqreen.token=\$SQREEN_TOKEN" > /app/.heroku/php/etc/php/conf.d/999-sqreen-token.ini
+  if [[ -n "\$SQREEN_APP_NAME" ]]; then
+    echo "sqreen.app_name=\$SQREEN_APP_NAME" >> /app/.heroku/php/etc/php/conf.d/999-sqreen-token.ini
+  fi
   if [[ -f "/app/.heroku/php/lib/sqreen/sqreen-agent/sqreen-agent" ]]; then
     /app/.heroku/php/lib/sqreen/sqreen-agent/sqreen-agent --log_location /dev/stderr &
   else
