@@ -8,6 +8,7 @@ ENV S3_PREFIX=dist-heroku-18-develop/
 ENV S3_REGION=s3
 ENV STACK=heroku-18
 
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y python-pip
 
 COPY requirements.txt /app/requirements.txt
