@@ -7,6 +7,7 @@ require 'date'
 require 'json'
 require 'sem_version'
 require 'shellwords'
+require 'excon'
 
 ENV['RACK_ENV'] = 'test'
 
@@ -15,16 +16,20 @@ def product_hash(hash)
 end
 
 RSpec.configure do |config|
-	config.filter_run focused: true unless ENV['IS_RUNNING_ON_TRAVIS']
+	config.filter_run focused: true unless ENV['IS_RUNNING_ON_CI']
 	config.run_all_when_everything_filtered = true
 	config.alias_example_to :fit, focused: true
-	config.full_backtrace      = true
+	config.filter_run_excluding :requires_php_on_stack => lambda { |series| !php_on_stack?(series) }
+	config.filter_run_excluding :stack => lambda { |stack| ENV['STACK'] != stack }
+	
 	config.verbose_retry       = true # show retry status in spec process
-	config.default_retry_count = 2 if ENV['IS_RUNNING_ON_TRAVIS'] # retry all tests that fail again
+	config.default_retry_count = 2 if ENV['IS_RUNNING_ON_CI'] # retry all tests that fail again...
+	config.exceptions_to_retry = [Excon::Errors::Timeout] #... if they're caused by these exception types
+	config.fail_fast = 1 if ENV['IS_RUNNING_ON_CI']
+	
 	config.expect_with :rspec do |c|
 		c.syntax = :expect
 	end
-	config.filter_run_excluding :requires_php_on_stack => lambda { |series| !php_on_stack?(series) }
 end
 
 def successful_body(app, options = {})
@@ -48,7 +53,7 @@ def expected_default_php(stack)
 		when "cedar-14", "heroku-16"
 			"5.6"
 		else
-			"7.3"
+			"7.4"
 	end
 end
 
@@ -57,9 +62,9 @@ def php_on_stack?(series)
 		when "cedar-14"
 			available = ["5.5", "5.6", "7.0", "7.1", "7.2", "7.3"]
 		when "heroku-16"
-			available = ["5.6", "7.0", "7.1", "7.2", "7.3"]
+			available = ["5.6", "7.0", "7.1", "7.2", "7.3", "7.4"]
 		else
-			available = ["7.1", "7.2", "7.3"]
+			available = ["7.1", "7.2", "7.3", "7.4"]
 	end
 	available.include?(series)
 end
