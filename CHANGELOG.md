@@ -1,5 +1,242 @@
 # heroku-buildpack-php CHANGELOG
 
+## v188 (2021-01-08)
+
+### ADD
+
+- PHP/7.3.26 [David Zuelke]
+- PHP/7.4.14 [David Zuelke]
+- PHP/8.0.1 [David Zuelke]
+- ext-blackfire/1.48.1 [David Zuelke]
+- ext-rdkafka/4.1.2 [David Zuelke]
+
+## v187 (2020-12-09)
+
+### ADD
+
+- ext-rdkafka/4.1.1 [David Zuelke]
+- ext-newrelic/9.15.0.293 [David Zuelke]
+
+### CHG
+
+- librdkafka/1.5.3 [David Zuelke]
+
+### FIX
+
+- ext-redis is missing for PHP 8 (#452) [David Zuelke]
+
+## v186 (2020-12-07)
+
+### ADD
+
+- PHP/7.3.25 [David Zuelke]
+- PHP/7.4.13 [David Zuelke]
+- PHP/8.0.0 (for stacks `heroku-18` and `heroku-20`) [David Zuelke]
+- ext-ev/1.0.9 [David Zuelke]
+- ext-mongodb/1.9.0 [David Zuelke]
+- ext-blackfire/1.46.4 [David Zuelke]
+- ext-event/3.0.2 [David Zuelke]
+
+### CHG
+
+- Default to PHP 8 if possible for heroku-20 [David Zuelke]
+- Composer/1.10.19 [David Zuelke]
+- Composer/2.0.8 [David Zuelke]
+
+## v185 (2020-11-22)
+
+### FIX
+
+- composer bin-dir is not available on $PATH to subsequent buildpacks [David Zuelke]
+- composer bin-dir exported as relative location in $PATH at runtime [David Zuelke]
+
+## v184 (2020-11-20)
+
+### ADD
+
+- Support for Composer 2 (#440) [David Zuelke]
+- Composer/2.0.7 [David Zuelke]
+
+### CHG
+
+- Install Composer using platform installer [David Zuelke]
+- Do not output download progress during `composer install` [David Zuelke]
+
+### FIX
+
+- ext-newrelic prints info messages during startup regardless of `NEW_RELIC_LOG_LEVEL` [David Zuelke]
+
+## v183 (2020-11-13)
+
+### ADD
+
+- ext-newrelic/9.14.0.290 [David Zuelke]
+- PHP/8.0.0RC4 (heroku-20 stack only) [David Zuelke]
+- ext-mongodb/1.9.0RC1 (PHP 8 only) [David Zuelke]
+- PHP/7.3.24 [David Zuelke]
+- PHP/7.4.12 [David Zuelke]
+- ext-apcu/5.1.19 [David Zuelke]
+- ext-blackfire/1.44.0 [David Zuelke]
+- ext-event/3.0.0 [David Zuelke]
+- ext-mongodb/1.8.2 [David Zuelke]
+- ext-phalcon/4.1.0 [David Zuelke]
+- ext-rdkafka/4.0.4 [David Zuelke]
+- ext-redis/5.3.2 [David Zuelke]
+- ext-uuid/1.2.0 [David Zuelke]
+- ext-psr/1.0.1 [David Zuelke]
+
+### CHG
+
+- Patches to optionally ignore SIGTERM in Apache, Nginx and PHP builds (not yet implemented by the buildpack) [David Zuelke]
+- librdkafka/1.5.2 [David Zuelke]
+- Composer/1.10.17 [David Zuelke]
+
+### FIX
+
+- Explicit ext-newrelic require outputs info messages during builds [David Zuelke]
+
+## v182 (2020-10-12)
+
+### ADD
+
+- Support for heroku-20 stack [David Zuelke]
+
+## v181 (2020-10-01)
+
+### ADD
+
+- PHP/7.2.34 [David Zuelke]
+- PHP/7.3.23 [David Zuelke]
+- PHP/7.4.11 [David Zuelke]
+- ext-oauth/2.0.7 [David Zuelke]
+- ext-pq/2.1.8 [David Zuelke]
+- ext-newrelic/9.13.0.270 [David Zuelke]
+
+## v180 (2020-09-15)
+
+### ADD
+
+- PHP/7.3.22 [David Zuelke]
+- PHP/7.4.10 [David Zuelke]
+- ext-blackfire/1.39.1 [David Zuelke]
+- ext-event/2.5.7 [David Zuelke]
+- ext-oauth/2.0.6 [David Zuelke]
+
+### CHG
+
+- Composer/1.10.13 [David Zuelke]
+
+## v179 (2020-08-13)
+
+### ADD
+
+- PHP/7.2.33 [David Zuelke]
+- PHP/7.3.21 [David Zuelke]
+- PHP/7.4.9 [David Zuelke]
+- ext-blackfire/1.36.0 [David Zuelke]
+- ext-mongodb/1.8.0 [David Zuelke]
+- ext-newrelic/9.12.0.268 [David Zuelke]
+- Apache/2.4.46 [David Zuelke]
+
+### CHG
+
+- librdkafka/1.5.0 [David Zuelke]
+- Composer/1.10.10 [David Zuelke]
+- libcassandra/2.15.3 [David Zuelke]
+
+### FIX
+
+- Detection of `composer test` or common testing frameworks on Heroku CI occasionally fails on PHP 7.4 (#388) [David Zuelke]
+
+## v178 (2020-07-09)
+
+### ADD
+
+- PHP/7.4.8 [David Zuelke]
+- PHP/7.3.20 [David Zuelke]
+- PHP/7.2.32 [David Zuelke]
+- ext-redis/5.3.1 [David Zuelke]
+- ext-mongodb/1.7.5 [David Zuelke]
+
+### CHG
+
+- librdkafka/1.4.4 [David Zuelke]
+- Composer/1.10.8 [David Zuelke]
+
+## v177 (2020-06-18)
+
+### ADD
+
+- PHP/7.3.19 [David Zuelke]
+- PHP/7.4.7 [David Zuelke]
+- ext-blackfire/1.34.3 [David Zuelke]
+- ext-newrelic/9.6.0.267 [David Zuelke]
+- ext-pcov/1.0.6 (#415) [David Zuelke]
+
+### CHG
+
+- Composer/1.10.7 [David Zuelke]
+
+## v176 (2020-05-26)
+
+### FIX
+
+- Fix build failures for apps that also use heroku/python, introduced in 04c5e14 (#412) [David Zuelke]
+
+## v175 (2020-05-25)
+
+### ADD
+
+- PHP/7.2.31 [David Zuelke]
+- PHP/7.3.18 [David Zuelke]
+- PHP/7.4.6 [David Zuelke]
+- ext-redis/5.2.2 [David Zuelke]
+- ext-newrelic/9.10.1.263 [David Zuelke]
+- ext-phalcon/4.0.6 [David Zuelke]
+- ext-blackfire/1.34.0 [David Zuelke]
+- ext-event/2.5.6 [David Zuelke]
+
+### CHG
+
+- Support `python` not being symlinked to `python2` [Ed Morley]
+- Composer/1.10.6 [David Zuelke]
+- librdkafka/1.4.2 [David Zuelke]
+- libcassandra/2.15.2 [David Zuelke]
+
+## v174 (2020-04-30)
+
+### ADD
+
+- PHP/7.2.30 [David Zuelke]
+- PHP/7.3.17 [David Zuelke]
+- PHP/7.4.5 [David Zuelke]
+- Apache/2.4.43 [David Zuelke]
+- ext-blackfire/1.33.0 [David Zuelke]
+- ext-amqp/1.10.2 [David Zuelke]
+- Nginx/1.18.0 [David Zuelke]
+- ext-newrelic/9.10.0.262 [David Zuelke]
+
+### CHG
+
+- Composer/1.10.5 [David Zuelke]
+- librdkafka/1.4.0 [David Zuelke]
+
+## v173 (2020-03-20)
+
+### ADD
+
+- ext-phalcon/4.0.5 [David Zuelke]
+- ext-mongodb/1.7.4 [David Zuelke]
+- ext-redis/5.2.1 [David Zuelke]
+- PHP/7.4.4 [David Zuelke]
+- PHP/7.3.16 [David Zuelke]
+- PHP/7.2.29 [David Zuelke]
+
+### CHG
+
+- Composer/1.10.1 [David Zuelke]
+- libcassandra/2.15.1 [David Zuelke]
+
 ## v172 (2020-02-28)
 
 ### ADD

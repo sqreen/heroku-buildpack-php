@@ -30,6 +30,8 @@ if [[ $dep_version == *alpha* ]] || [[ $dep_version == *beta* ]] || [[ $dep_vers
 		dep_url=https://downloads.php.net/~cmb/${dep_archive_name}
 	elif [[ $dep_version == 7.4.* ]]; then
 		dep_url=https://downloads.php.net/~derick/${dep_archive_name}
+	elif [[ $dep_version == 8.0.* ]]; then
+		dep_url=https://downloads.php.net/~carusogabriel/${dep_archive_name}
 	fi
 else
 	dep_url=https://www.php.net/distributions/${dep_archive_name}
@@ -51,11 +53,16 @@ elif [[ $STACK == "heroku-16" ]]; then
 	needed+=( libonig2 )
 	needed+=( libsodium18 )
 	needed+=( libzip4 )
-else
+elif [[ $STACK == "heroku-18" ]]; then
 	needed+=( libicu60 )
 	needed+=( libonig4 )
 	needed+=( libsodium23 )
 	needed+=( libzip4 )
+else
+	needed+=( libicu66 )
+	needed+=( libonig5 )
+	needed+=( libsodium23 )
+	needed+=( libzip5 )
 fi
 if [[ $dep_version == 5.* || $dep_version == 7.[0-1].* ]]; then
 	needed+=( libmcrypt4 )
@@ -86,6 +93,14 @@ if [[ "$missing" ]]; then
 	apt-get install -q -y $missing
 fi
 
+# freetype-config is gone on 20.04, but 7.3 doesn't use pkg-config yet
+if [[ $STACK == "heroku-20" && $dep_version == 7.3.* ]]; then
+	patch -p1 < "$(dirname "$BASH_SOURCE")/patches/php-freetype-pkgconfig.patch"
+	# we changed config.m4 for GD, re-generate configure
+	./buildconf --force
+fi
+# all following sed "patches" modify configure directly, so we must do that after the above buildconf re-gen
+
 if dpkg --compare-versions "$dep_version" "lt" 7.0.16 || dpkg --compare-versions "$dep_version" "eq" 7.1.0 || dpkg --compare-versions "$dep_version" "eq" 7.1.1; then
 	# look for GMP libs in /usr/lib/x86_64-linux-gnu and not /usr/lib
 	sed -i 's/$GMP_DIR\/$PHP_LIBDIR/$GMP_DIR\/$PHP_LIBDIR\/x86_64-linux-gnu/' configure
@@ -105,8 +120,10 @@ fi
 # see the AC_DEFUN([AC_FPM_TRACE] bits in sapi/fpm/config.m4
 sed -i 's/have_ptrace=yes/have_ptrace=no/' configure
 
+patch -p1 < $(dirname $BASH_SOURCE)/patches/php-ignoresigterm.patch
+
 configureopts=()
-if [[ $dep_version == 7.* ]]; then
+if [[ $dep_version != 5.* ]]; then
 	if [[ $dep_version == 7.[0-3].* ]]; then
 		configureopts+=("--enable-opcache-file" "--enable-zip")
 		configureopts+=("--with-sqlite3=shared${sqlite_prefix:+","}${sqlite_prefix}" "--with-pdo-sqlite=shared${sqlite_prefix:+","}${sqlite_prefix}")
@@ -135,6 +152,9 @@ if [[ $dep_version == 7.* ]]; then
 	fi
 else
 	configureopts+=("--with-gd=shared" "--with-freetype-dir=/usr" "--with-jpeg-dir=/usr" "--with-png-dir=/usr" "--with-mcrypt" "--with-mysql=shared" "--enable-zip" "--with-sqlite3=shared${sqlite_prefix:+","}${sqlite_prefix}" "--with-pdo-sqlite=shared${sqlite_prefix:+","}${sqlite_prefix}")
+fi
+if [[ $dep_version != 8.* ]]; then
+	configureopts+=("--with-xmlrpc=shared")
 fi
 if [[ $STACK == "cedar-14" ]]; then
 	configureopts+=("--without-libzip" "--without-onig") # there is no libzip and no libonig on cedar-14
@@ -177,7 +197,6 @@ export PATH=${OUT_PREFIX}/bin:$PATH
 	--enable-pcntl=shared \
 	--enable-shmop=shared \
 	--enable-soap=shared \
-	--with-xmlrpc=shared \
 	--with-xsl=shared \
 	"${configureopts[@]}"
 make -s -j 9
