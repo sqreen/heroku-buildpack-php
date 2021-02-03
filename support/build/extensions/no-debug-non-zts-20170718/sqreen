@@ -32,7 +32,7 @@ case ${ZEND_MODULE_API_VERSION#no-debug-non-zts-} in
   20190902)
     series=7.4
     ;;
-  20190930)
+  20200930)
     series=8.0
     ;;
   *)
